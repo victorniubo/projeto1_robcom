@@ -124,7 +124,7 @@ def direction(frame):
 
     frame_hsv = cv2.cvtColor(frame_util, cv2.COLOR_BGR2HSV)
 
-    hsv0, hsv1 = ranges("#FFFFFF")
+    hsv0, hsv1 = ranges("#ffffff")
 
     segmentado = cv2.inRange(frame_hsv, hsv0, hsv1)
 
@@ -162,7 +162,8 @@ def direction(frame):
 
         if linhas[0] == 0 or linhas[1] == 0:
             print("sem pf")
-            cv2.imshow('video', frame_hsv)
+            print(hsv0,hsv1)
+            cv2.imshow('video', segmentado)
             cv2.waitKey(1)
 
             return [0,0], frame

@@ -18,7 +18,7 @@ from tf import TransformerROS
 import tf2_ros
 from geometry_msgs.msg import Twist, Vector3, Pose, Vector3Stamped
 from ar_track_alvar_msgs.msg import AlvarMarker, AlvarMarkers
-from nav_msgs.msg import Odometry
+from nav_msgs.msg import Odometry 
 from sensor_msgs.msg import Image
 from std_msgs.msg import Header
 from numpy import linalg
@@ -167,6 +167,8 @@ if __name__=="__main__":
             # for r in resultados:
             #     print(r)
             #velocidade_saida.publish(vel)
+
+            
             rospy.sleep(0.1)
 
     except rospy.ROSInterruptException:
