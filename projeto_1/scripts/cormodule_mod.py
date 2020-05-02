@@ -93,10 +93,15 @@ def coefAang(a,b):
 def mediaPontos(l):
     soma_x = 0
     soma_y = 0
+    
     if len(l) < 1:
         return [0,0]
 
+    if len(l) > 10:
+        l = l[-9:]
     else:
+        if len(l) > 10:
+            l = l[-9:]
         for i in l:
             soma_x += i[0]
             soma_y += i[1]
@@ -117,63 +122,60 @@ def auto_canny(image, sigma=0.33):
     # return the edged image
     return edged
 
-def direction(frame):
+def direction(frame, linhas):
 
     half_height = int(frame.shape[0]/2)
     frame_util = frame[half_height:][:][:]
 
-    frame_hsv = cv2.cvtColor(frame_util, cv2.COLOR_BGR2HSV)
 
-    hsv0, hsv1 = ranges("#ffffff")
+    frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-    segmentado = cv2.inRange(frame_hsv, hsv0, hsv1)
+    hsv0 = np.array([0,0,240])
+    hsv1 = np.array([255,50,255])
 
-    blur = cv2.GaussianBlur(segmentado,(5,5),0)
+    mask = cv2.inRange(frame_hsv, hsv0, hsv1)
+
+    blur = cv2.GaussianBlur(mask,(5,5),0)
     bordas = auto_canny(blur)
     
     hough_img = bordas.copy()
 
-    lines = cv2.HoughLinesP(hough_img, 20, math.pi/180.0, 100, np.array([]), 10, 5)
+    lines = cv2.HoughLinesP(hough_img, 10, math.pi/180.0, 100, np.array([]), 30, 5)
 
     a,b,c = lines.shape
 
     hough_img_rgb = cv2.cvtColor(hough_img, cv2.COLOR_GRAY2RGB)
 
-    linhas = [0,0,0,0]
-
-    fuga_points = []
     for i in range(a):
         xp = lines[i][0][0]
         yp = lines[i][0][1]
         xs = lines[i][0][2]
         ys = lines[i][0][3]
 
-        p = [xp,yp,dist(xp,yp)]
-        s = [xs,ys,dist(xp,yp)]
+        p = [xp,yp]
+        s = [xs,ys]
         
         if -3 < coefAang(p,s) < -0.5:
-            if p[2] > linhas[2]:
-                linhas[2] = p[2]
-                linhas[0] = [p,s]
-        elif 0.5 < coefAang(p,s) < 3:
-            if p[2] > linhas[3]:
-                linhas[3] = p[2]
-                linhas[1] = [p,s]
+            linhas[0] = [p,s]
+        else:
+            linhas[1] = [p,s]
 
         if linhas[0] == 0 or linhas[1] == 0:
-            print("sem pf")
-            print(hsv0,hsv1)
-            cv2.imshow('video', segmentado)
-            cv2.waitKey(1)
-
             return [0,0], frame
-            
+
         else:
+            cv2.line(hough_img_rgb, (linhas[0][0][0], linhas[0][0][1]), (linhas[0][1][0], linhas[0][1][1]), (255, 0, 0), 2, cv2.LINE_AA)
+            cv2.line(hough_img_rgb, (linhas[1][0][0], linhas[1][0][1]), (linhas[1][1][0], linhas[1][1][1]), (0, 0, 255), 2, cv2.LINE_AA)
+
             pf = escapePoint(linhas[0][0],linhas[0][1],linhas[1][0],linhas[1][1])
+            cv2.circle(hough_img_rgb,(linhas[0][0][0], linhas[0][0][1]),2,(0,0,255),2)
+            cv2.circle(hough_img_rgb,(linhas[0][1][0], linhas[0][1][1]),2,(0,0,255),2)
+            cv2.circle(hough_img_rgb,(linhas[1][0][0], linhas[1][0][1]),2,(255,0,0),2)
+            cv2.circle(hough_img_rgb,(linhas[1][1][0], linhas[1][1][1]),2,(255,0,0),2)
             cv2.circle(hough_img_rgb,(pf[0],pf[1]),2,(0,255,0),2)
-
-            print("era pra ir")
-
+            #print(linhas)
+            print(pf)
+            print(escapePoint([3.0, 2.5],[4.0, 0.6],[1.0, 2.4],[0.6, 1.1]))
             return pf, hough_img_rgb
 
         

@@ -56,6 +56,9 @@ y = 0
 z = 0 
 id = 0
 
+lines = [0,0]
+
+image_final = None
 frame = "camera_link"
 # frame = "head_camera"  # DESCOMENTE para usar com webcam USB via roslaunch tag_tracking usbcam
 
@@ -109,6 +112,7 @@ def roda_todo_frame(imagem):
     global cv_image
     global media
     global centro
+    global image_final
 
     global resultados
 
@@ -124,7 +128,7 @@ def roda_todo_frame(imagem):
     try:
         antes = time.clock()
         cv_image = bridge.compressed_imgmsg_to_cv2(imagem, "bgr8")
-        pf, imagem = cormodule_mod.direction(cv_image)
+        pf, image_final = cormodule_mod.direction(cv_image,lines)
         # Note que os resultados já são guardados automaticamente na variável
         # chamada resultados
         # centro, imagem, resultados =  visao_module.processa(cv_image)        
@@ -167,6 +171,9 @@ if __name__=="__main__":
             # for r in resultados:
             #     print(r)
             #velocidade_saida.publish(vel)
+            if image_final is not None:
+                cv2.imshow("420",image_final)
+                cv2.waitKey(1)
 
             
             rospy.sleep(0.1)
