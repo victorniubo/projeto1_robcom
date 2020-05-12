@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -*- coding:utf-8 -*-
 
-
+from __future__ import division
 import rospy
 import numpy as np
 import tf
@@ -97,11 +97,9 @@ def mediaPontos(l):
     if len(l) < 1:
         return [0,0]
 
-    if len(l) > 10:
-        l = l[-9:]
     else:
-        if len(l) > 10:
-            l = l[-9:]
+        if len(l) > 21:
+            l = l[-20:]
         for i in l:
             soma_x += i[0]
             soma_y += i[1]
@@ -122,13 +120,12 @@ def auto_canny(image, sigma=0.33):
     # return the edged image
     return edged
 
-def direction(frame, linhas):
+def direction(frame, linhas, pontos, tempos):
 
-    half_height = int(frame.shape[0]/2)
+    half_height = int(frame.shape[0]*3/5)
     frame_util = frame[half_height:][:][:]
 
-
-    frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    frame_hsv = cv2.cvtColor(frame_util, cv2.COLOR_BGR2HSV)
 
     hsv0 = np.array([0,0,240])
     hsv1 = np.array([255,50,255])
@@ -140,7 +137,7 @@ def direction(frame, linhas):
     
     hough_img = bordas.copy()
 
-    lines = cv2.HoughLinesP(hough_img, 10, math.pi/180.0, 100, np.array([]), 30, 5)
+    lines = cv2.HoughLinesP(hough_img, rho = 1,theta = math.pi/120.0, threshold = 50,minLineLength = 40, maxLineGap = 15)
 
     a,b,c = lines.shape
 
@@ -152,13 +149,21 @@ def direction(frame, linhas):
         xs = lines[i][0][2]
         ys = lines[i][0][3]
 
+
         p = [xp,yp]
         s = [xs,ys]
         
-        if -3 < coefAang(p,s) < -0.5:
+        if (p[0] <  320 and s[0] < 320):
             linhas[0] = [p,s]
-        else:
+            t_left = rospy.get_rostime()
+            tempos[0] = t_left
+        elif (p[0] >  320 and s[0] > 320):
             linhas[1] = [p,s]
+            t_right = rospy.get_rostime()
+            tempos[1] = t_right
+
+        
+        
 
         if linhas[0] == 0 or linhas[1] == 0:
             return [0,0], frame
@@ -168,14 +173,9 @@ def direction(frame, linhas):
             cv2.line(hough_img_rgb, (linhas[1][0][0], linhas[1][0][1]), (linhas[1][1][0], linhas[1][1][1]), (0, 0, 255), 2, cv2.LINE_AA)
 
             pf = escapePoint(linhas[0][0],linhas[0][1],linhas[1][0],linhas[1][1])
-            cv2.circle(hough_img_rgb,(linhas[0][0][0], linhas[0][0][1]),2,(0,0,255),2)
-            cv2.circle(hough_img_rgb,(linhas[0][1][0], linhas[0][1][1]),2,(0,0,255),2)
-            cv2.circle(hough_img_rgb,(linhas[1][0][0], linhas[1][0][1]),2,(255,0,0),2)
-            cv2.circle(hough_img_rgb,(linhas[1][1][0], linhas[1][1][1]),2,(255,0,0),2)
+            pontos.append(pf)
             cv2.circle(hough_img_rgb,(pf[0],pf[1]),2,(0,255,0),2)
-            #print(linhas)
-            print(pf)
-            print(escapePoint([3.0, 2.5],[4.0, 0.6],[1.0, 2.4],[0.6, 1.1]))
+            #cv2.circle(hough_img_rgb,(pm[0],pm[1]),10,(0,255,0),2)
             return pf, hough_img_rgb
 
         
@@ -207,8 +207,9 @@ def identifica_cor(frame,cor):
 
 
     def cross(img_rgb, point, color, width,length):
-        cv2.line(img_rgb, (point[0] - length/2, point[1]),  (point[0] + length/2, point[1]), color ,width, length)
-        cv2.line(img_rgb, (point[0], point[1] - length/2), (point[0], point[1] + length/2),color ,width, length) 
+
+        cv2.line(img_rgb, (int(point[0] - length/2), point[1]),  (int(point[0] + length/2), point[1]), color ,width, length)
+        cv2.line(img_rgb, (point[0], int(point[1] - length/2)), (point[0], int(point[1] + length/2)),color ,width, length) 
 
 
 
@@ -237,7 +238,7 @@ def identifica_cor(frame,cor):
         media = maior_contorno.mean(axis=0)
         media = media.astype(np.int32)
         cv2.circle(frame, (media[0], media[1]), 5, [0, 255, 0])
-        cross(frame, centro, [255,0,0], 1, 17)
+        cross(frame, centro, [255,0,0], 1, 18)
     else:
         media = (0, 0)
 
@@ -246,8 +247,5 @@ def identifica_cor(frame,cor):
     # cv2.putText(frame,"{:d} {:d}".format(*media),(20,100), 1, 4,(255,255,255),2,cv2.LINE_AA)
     # cv2.putText(frame,"{:0.1f}".format(maior_contorno_area),(20,50), 1, 4,(255,255,255),2,cv2.LINE_AA)
 
-   # cv2.imshow('video', frame)
-    #cv2.imshow('seg', segmentado_cor)
-    cv2.waitKey(1)
 
     return media, centro, maior_contorno_area
