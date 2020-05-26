@@ -264,10 +264,10 @@ def volta_pra_pista(media2, centro2):
         # Calcula a diferença entre o centro do creeper e o centro da tela
         dif = int(media2[0]) - int(centro2[0])
         
-        if area2 > 7000:
+        if area2 > 5000:
             print("Achei")
             if -30 < dif and dif < 30:
-                vel = Twist(Vector3(0.2,0,0), Vector3(0,0,0))
+                vel = Twist(Vector3(0.3,0,0), Vector3(0,0,0))
                 
             elif dif < -30:
                 vel = Twist(Vector3(0,0,0), Vector3(0,0,0.1))
